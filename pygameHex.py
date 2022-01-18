@@ -529,7 +529,7 @@ def getAssets():
 			image = pygame.image.load(assets[items])
 		except:
 			with open(assets[items], "wb") as f:
-				f.write(requests.get("https://github.com/Chrome599/Hexagone/raw/main/" + assets[items]).content)
+				f.write(requests.get("https://github.com/Chrome599/Hexagone/raw/master/" + assets[items]).content)
 
 getAssets()
 controller()
