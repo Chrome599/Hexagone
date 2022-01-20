@@ -31,7 +31,7 @@ clock = pygame.time.Clock()
 FPS=30
 
 #List of game assets
-assets = ["Title.png", "bg.jpg", "hexWhite.png", "hex.png", "levelCompleteOpt1.png", "levelCompleteOpt2.png"]
+assets = ["Title.png", "bg.jpg", "hexWhite.png", "hex.png", "levelCompleteOpt1.png", "levelCompleteOpt2.png", "controlsGuide.png"]
 
 #Image loader
 class Image(pygame.sprite.Sprite):
@@ -72,7 +72,7 @@ def main_menu():
 
 	menu=True
 	selected="start"
-
+	pygame.display.set_caption("Hexagone - Main Menu")
 	#Simple event handler to allow the user to control the selected option
 	while menu:
 		for event in pygame.event.get():
@@ -119,12 +119,12 @@ def main_menu():
 		HexTitle = Image("Title.png", [150, 80])
 		screen.blit(HexTitle.image,HexTitle.rect)
 
+
         # Main Menu Text
 		screen.blit(text_start, (screen_width/2 - (start_rect[2]/2), 350))
 		screen.blit(text_quit, (screen_width/2 - (quit_rect[2]/2), 500))
 		pygame.display.update()
 		clock.tick(FPS)
-		pygame.display.set_caption("Hexagone - Main Menu")
 	return(scene)
 
 def level_select():
@@ -233,7 +233,6 @@ def game(level_chosen):
 
 	i=0
 	opt=0
-
 
 	level = Level(level_chosen)
 
@@ -524,12 +523,31 @@ def controller():
 
 #A function to ensure all assets necessary to run the game are in the folder with it.
 def getAssets():
-	for items in range(0,6):
+	for asset in assets:
 		try:
-			image = pygame.image.load(assets[items])
+			image = pygame.image.load(asset)
 		except:
-			with open(assets[items], "wb") as f:
-				f.write(requests.get("https://github.com/Chrome599/Hexagone/raw/master/" + assets[items]).content)
+			with open(asset, "wb") as f:
+				f.write(requests.get("https://github.com/Chrome599/Hexagone/raw/master/" + asset).content)
+	try:
+		with open("hexData.json", "r") as read_file:
+			jsonCheck = json.load(read_file)
+	except:
+		with open("hexData.json", "wb") as f:
+			f.write(requests.get("https://raw.githubusercontent.com/Chrome599/Hexagone/master/hexData.json").content)
+
+#class Hexagon:
+#	def __init__(self, active, connected):
+#		self.active = active
+#		self.connected = connected
+#	def connection(self, direction):
+#		return self.connected[direction]
+
+#class LevelConnections:
+#	def __init__(self, hexagons):
+#		self.hexagons = {}
+#		for hexagon, i in enumerate(hexagons):
+#			self.hexagons[i] = hexagon
 
 getAssets()
 controller()
