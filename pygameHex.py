@@ -151,9 +151,9 @@ def level_select():
 			levelHex = Image.Resize("hex.png", 1)
 			screen.blit(levelHex,[screen_width/6 * (j+1) - (levelHex.get_width()/2) + 10, 315 - (levelHex.get_height()/2)])
 			if j == i:
-				level_current = text_format(levels[j], font, 55, blue)
-			else:
 				level_current = text_format(levels[j], font, 55, white)
+			else:
+				level_current = text_format(levels[j], font, 55, black)
 
 			screen.blit(level_current, [screen_width/6 * (j+1), 300])
 
