@@ -31,7 +31,7 @@ clock = pygame.time.Clock()
 FPS=30
 
 #List of game assets
-assets = ["Title.png", "bg.jpg", "hexWhite.png", "hex.png", "levelCompleteOpt1.png", "levelCompleteOpt2.png", "controlsGuide.png"]
+assets = ["Title.png", "bg.jpg", "hexWhite.png", "hex.png", "levelCompleteOpt1.png", "levelCompleteOpt2.png", "controlsLeft.png", "controlsRight.png", "endScreen.png", "startHex.png"]
 
 #Image loader
 class Image(pygame.sprite.Sprite):
