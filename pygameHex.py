@@ -71,58 +71,39 @@ def text_format(message, textFont, textSize, textColour):
 def main_menu():
 
 	menu=True
-	selected="start"
 	pygame.display.set_caption("Hexagone - Main Menu")
-	#Simple event handler to allow the user to control the selected option
+
 	while menu:
 		for event in pygame.event.get():
 			if event.type==pygame.QUIT:
 				pygame.quit()
 				quit()
 			if event.type==pygame.KEYDOWN:
-				if event.key==pygame.K_w:
-					selected="start"
-				elif event.key==pygame.K_s:
-					selected="quit"
-				if event.key==pygame.K_RETURN:
-					if selected=="start":
-						#print("Start")
-						scene = "level_select"
-						menu=False
-					if selected=="quit":
-						pygame.quit()
-						quit()
+				if event.key==pygame.K_ESCAPE:
+					pygame.quit()
+					quit()
+				elif event.key==pygame.K_RETURN:
+					scene = "level_select"
+					menu=False
 
         # Main Menu UI
 		screen.fill([255, 255, 255])
 		screen.blit(BackGround.image,BackGround.rect)
 
-		# Resizing a generic image sprite so I don't need 4 different image files for different sized hexagons
-		StartHex = Image.Resize("hex.png", 2.3)
-		screen.blit(StartHex,[screen_width/2 - (StartHex.get_width()/2), 370 - (StartHex.get_height()/2)])
-
-		#Changing what the sprite looks like if selected
-		if selected=="start":
-			text_start=text_format("START", font, 75, blue)
-		else:
-			text_start = text_format("START", font, 75, white)
-		if selected=="quit":
-			text_quit=text_format("QUIT", font, 65, blue)
-		else:
-			text_quit = text_format("QUIT", font, 55, white)
-
-
-		start_rect=text_start.get_rect()
-		quit_rect=text_quit.get_rect()
-
 		# Main Menu title
-		HexTitle = Image("Title.png", [150, 80])
+		HexTitle = Image("Title.png", [150, 70])
 		screen.blit(HexTitle.image,HexTitle.rect)
 
+		#Control diagrams
+		controlsLeft = Image.Resize("controlsLeft.png", 0.7)
+		screen.blit(controlsLeft,[0,300])
 
-        # Main Menu Text
-		screen.blit(text_start, (screen_width/2 - (start_rect[2]/2), 350))
-		screen.blit(text_quit, (screen_width/2 - (quit_rect[2]/2), 500))
+		controlsRight = Image.Resize("controlsRight.png", 0.8)
+		screen.blit(controlsRight,[screen_width-controlsRight.get_width(), 375])
+
+		startHex = Image.Resize("startHex.png", 1)
+		screen.blit(startHex,[screen_width/2-startHex.get_width()/2, 300])
+
 		pygame.display.update()
 		clock.tick(FPS)
 	return(scene)
@@ -131,6 +112,7 @@ def level_select():
 
 	select=True
 	i = 0
+	pygame.display.set_caption("Hexagone - Level Select")
 
 	while select:
 
@@ -153,6 +135,9 @@ def level_select():
 					scene = "game"
 					#print(level_chosen)
 					select=False
+				elif event.key==pygame.K_ESCAPE:
+					pygame.quit()
+					quit()
 
 
 		levels = ["1","2","3","4","5","6","7","8","9","10"]
@@ -191,7 +176,6 @@ def level_select():
 
 		pygame.display.update()
 		clock.tick(FPS)
-		pygame.display.set_caption("Hexagone - Level Select")
 
 	return(scene, level_chosen)
 
@@ -246,6 +230,8 @@ def game(level_chosen):
 		if not current_level[a]:
 			visited.append(a)
 
+	pygame.display.set_caption(caption)
+
 	# Game Loop
 	while game:
 
@@ -256,7 +242,7 @@ def game(level_chosen):
 
 			#Event handler in charge of dealing with inputs during the game. Due to movement in 6 directions great specification is needed
 			#An alternative to this is to hard code each hexagon using classes to know the hexagons they are connected to. Mouse controls are also an option
-			if event.type==pygame.KEYDOWN and len(visited) != 24:
+			if event.type==pygame.KEYDOWN and (len(visited) != 24 or i != 24):
 				if event.key==pygame.K_w and i != 0 and i != 24:
 					if i == 2 and current_level[1]:
 						visited.append(i)
@@ -461,21 +447,37 @@ def game(level_chosen):
 					game = False
 					scene = "game"
 
+				elif event.key==pygame.K_ESCAPE:
+					pygame.quit()
+					quit()
+
 			elif event.type==pygame.KEYDOWN and i == 24 and len(visited) == 24:
-				if event.key==pygame.K_RETURN:
-					if opt == 0:
+				if event.key==pygame.K_ESCAPE:
+					pygame.quit()
+					quit()
+
+				elif level_chosen != 10:
+					if event.key==pygame.K_RETURN:
+						if opt == 0:
+							game = False
+							scene = "main_menu"
+						elif opt == 1:
+							game = False
+							scene = "game"
+							level_chosen += 1
+
+					elif event.key==pygame.K_w or event.key==pygame.K_e or event.key==pygame.K_q or event.key==pygame.K_a or event.key==pygame.K_s or event.key==pygame.K_d:
+						if opt == 0:
+							opt = 1
+						elif opt == 1:
+							opt = 0
+				else:
+					if event.key==pygame.K_RETURN:
 						game = False
 						scene = "main_menu"
-					elif opt == 1:
-						game = False
-						scene = "game"
-						if level_chosen != 10:
-							level_chosen += 1
-				elif event.key==pygame.K_w or event.key==pygame.K_e or event.key==pygame.K_q or event.key==pygame.K_a or event.key==pygame.K_s or event.key==pygame.K_d:
-					if opt == 0:
-						opt = 1
-					elif opt == 1:
-						opt = 0
+
+
+
 
 
 
@@ -494,7 +496,7 @@ def game(level_chosen):
 				screen.blit(game_hex,hex_positions[j])
 
 		#Completion Screen
-		if i == 24 and len(visited) == 24:
+		if i == 24 and len(visited) == 24 and level_chosen != 10:
 			current_level[i] = False
 			if opt == 0:
 				levelComplete = Image.Resize("levelCompleteOpt1.png", 1)
@@ -502,10 +504,14 @@ def game(level_chosen):
 				levelComplete = Image.Resize("levelCompleteOpt2.png", 1)
 			screen.blit(levelComplete, [screen_width/2 - levelComplete.get_width()/2, screen_height/2 - levelComplete.get_height()/2])
 
+		elif i == 24 and len(visited) == 24 and level_chosen == 10:
+			current_level[i] = False
+			endScreen = Image.Resize("endScreen.png", 1)
+			screen.blit(endScreen, [screen_width/2 - endScreen.get_width()/2, screen_height/2 - endScreen.get_height()/2])
+
 
 		pygame.display.update()
 		clock.tick(FPS)
-		pygame.display.set_caption(caption)
 
 	return scene, level_chosen
 
