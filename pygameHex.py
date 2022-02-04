@@ -470,7 +470,8 @@ def getAssets():
             with open(asset, "wb") as f:
                 f.write(
                     requests.get(
-                        "https://github.com/Chrome599/Hexagone/raw/master/" + asset
+                        "https://github.com/Chrome599/Hexagone/raw/master/assets"
+                        + asset
                     ).content
                 )
     try:
