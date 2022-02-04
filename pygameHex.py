@@ -17,11 +17,8 @@ screen=pygame.display.set_mode((screen_width, screen_height))
 # Colours for quick use
 white=(255, 255, 255)
 black=(0, 0, 0)
-grey=(50, 50, 50)
-red=(255, 0, 0)
-green=(0, 255, 0)
 blue=(0, 0, 255)
-yellow=(255, 255, 0)
+
 
 # Game Fonts
 font = "Retro.ttf"
@@ -32,6 +29,33 @@ FPS=30
 
 #List of game assets
 assets = ["Title.png", "bg.jpg", "hexWhite.png", "hex.png", "levelCompleteOpt1.png", "levelCompleteOpt2.png", "controlsLeft.png", "controlsRight.png", "endScreen.png", "startHex.png"]
+
+connections = {0:{"E":1,"D":2},
+1:{"E":3,"A":0,"S":2,"D":4},
+2:{"Q":0,"W":1,"E":4,"D":5},
+3:{"E":6,"A":1,"S":4,"D":7},
+4:{"Q":1,"W":3,"E":7,"A":2,"S":5,"D":8},
+5:{"Q":2,"W":4,"E":8,"D":9},
+6:{"E":10,"A":3,"S":7,"D":11},
+7:{"Q":3,"W":6,"E":11,"A":4,"S":8,"D":12},
+8:{"Q":4,"W":7,"E":12,"A":5,"S":9,"D":13},
+9:{"Q":5,"W":8,"E":13,"D":14},
+10:{"A":6,"S":11,"D":15},
+11:{"Q":6,"W":10,"E":15,"A":7,"S":12,"D":16},
+12:{"Q":7,"W":11,"E":16,"A":8,"S":13,"D":17},
+13:{"Q":8,"W":12,"E":17,"A":9,"S":14,"D":18},
+14:{"Q":9,"W":13,"E":18},
+15:{"Q":10,"A":11,"S":16,"D":19},
+16:{"Q":11,"W":15,"E":19,"A":12,"S":17,"D":20},
+17:{"Q":12,"W":16,"E":20,"A":13,"S":18,"D":21},
+18:{"Q":13,"W":17,"E":21,"A":14},
+19:{"Q":15,"A":16,"S":20,"D":22},
+20:{"Q":16,"W":19,"E":22,"A":17,"S":21,"D":23},
+21:{"Q":17,"W":20,"E":23,"A":18},
+22:{"Q":19,"A":20,"S":23,"D":24},
+23:{"Q":20,"W":22,"E":24,"A":21},
+24:{"Q":22,"A":23}}
+
 
 #Image loader
 class Image(pygame.sprite.Sprite):
@@ -55,6 +79,36 @@ class Level:
 		with open(fileName, "r") as read_file:
 			levelLoad = json.load(read_file)
 		return levelLoad[self.level_chosen-1]
+
+
+class Hexagon:
+	def __init__(self, active):
+		self.active = active
+	def make_inactive(self):
+		self.active = False
+
+class LevelConnections:
+	def __init__(self, hexagons, visited, starting_index = 0):
+		self.hexagons = hexagons
+		self.visited = visited
+		self.index = starting_index
+	def possible_move(self, direction):
+		try:
+			if self.hexagons[connections[self.index][direction]].active:
+				next_index = connections[self.index][direction]
+				self.hexagons[self.index].make_inactive()
+				self.index = next_index
+				self.visited += 1
+				if self.visited == 24 and self.index == 24:
+					self.hexagons[self.index].make_inactive()
+		except:
+			pass
+		return self.index
+	def is_active(self, index):
+		return self.hexagons[index].active
+	def number_visited(self):
+		return self.visited
+
 
 
 # Game BackGround
@@ -223,12 +277,21 @@ def game(level_chosen):
 	#Fetching the level data needed from the json file
 	current_level = level.levelLoader("hexData.json")
 
-	visited = []
+	visited_start = 0
 
 	#Adding all hexagons that are not present at the start to the "visited" list, allowing for easier comparing with a completed end state
 	for a in range(0,25):
 		if not current_level[a]:
-			visited.append(a)
+			visited_start += 1
+
+	hexagons = []
+
+	for hexagon in range(0,25):
+		hexagons.append(Hexagon(current_level[hexagon]))
+
+	connectionsStart = LevelConnections(hexagons, visited_start)
+
+
 
 	pygame.display.set_caption(caption)
 
@@ -242,206 +305,24 @@ def game(level_chosen):
 
 			#Event handler in charge of dealing with inputs during the game. Due to movement in 6 directions great specification is needed
 			#An alternative to this is to hard code each hexagon using classes to know the hexagons they are connected to. Mouse controls are also an option
-			if event.type==pygame.KEYDOWN and (len(visited) != 24 or i != 24):
+			if event.type==pygame.KEYDOWN and (connectionsStart.number_visited() != 24 or i != 24):
 				if event.key==pygame.K_w and i != 0 and i != 24:
-					if i == 2 and current_level[1]:
-						visited.append(i)
-						current_level[i] = False
-						i = 1
-					elif i < 6 and i > 3 and current_level[i-1]:
-						visited.append(i)
-						current_level[i] = False
-						i -= 1
-					elif i < 10 and i > 6 and current_level[i-1]:
-						visited.append(i)
-						current_level[i] = False
-						i -= 1
-					elif i < 15 and i > 10 and current_level[i-1]:
-						visited.append(i)
-						current_level[i] = False
-						i -= 1
-					elif i < 19 and i > 15 and current_level[i-1]:
-						visited.append(i)
-						current_level[i] = False
-						i -= 1
-					elif i < 22 and i > 19 and current_level[i-1]:
-						visited.append(i)
-						current_level[i] = False
-						i -= 1
-					elif i < 24 and i > 22 and current_level[i-1]:
-						visited.append(i)
-						current_level[i] = False
-						i -= 1
-
-				elif event.key==pygame.K_s and i != 0 and i != 24:
-					if i == 1 and current_level[2]:
-						visited.append(i)
-						current_level[i] = False
-						i = 2
-					elif i > 2 and i < 5 and current_level[i+1]:
-						visited.append(i)
-						current_level[i] = False
-						i += 1
-					elif i > 5 and i < 9 and current_level[i+1]:
-						visited.append(i)
-						current_level[i] = False
-						i += 1
-					elif i > 9 and i < 14 and current_level[i+1]:
-						visited.append(i)
-						current_level[i] = False
-						i += 1
-					elif i > 14 and i < 18 and current_level[i+1]:
-						visited.append(i)
-						current_level[i] = False
-						i += 1
-					elif i > 18 and i < 21 and current_level[i+1]:
-						visited.append(i)
-						current_level[i] = False
-						i += 1
-					elif i > 21 and i < 23 and current_level[i+1]:
-						visited.append(i)
-						current_level[i] = False
-						i += 1
+					i = connectionsStart.possible_move("W")
 
 				elif event.key==pygame.K_q and i != 0:
-					if i == 2 and current_level[0]:
-						visited.append(i)
-						current_level[i] = False
-						i = 0
-					elif i > 3 and i < 6 and current_level[i-3]:
-						visited.append(i)
-						current_level[i] = False
-						i -= 3
-					elif i > 6 and i < 10 and current_level[i-4]:
-						visited.append(i)
-						current_level[i] = False
-						i -= 4
-					elif i > 10 and i < 15 and current_level[i-5]:
-						visited.append(i)
-						current_level[i] = False
-						i -= 5
-
-					elif i > 14 and i < 19 and current_level[i-5]:
-						visited.append(i)
-						current_level[i] = False
-						i -= 5
-					elif i > 18 and i < 22 and current_level[i-4]:
-						visited.append(i)
-						current_level[i] = False
-						i -= 4
-					elif i > 21 and i < 24 and current_level[i-3]:
-						visited.append(i)
-						current_level[i] = False
-						i -= 3
-					elif i == 24 and current_level[22]:
-						visited.append(i)
-						current_level[i] = False
-						i = 22
+					i = connectionsStart.possible_move("Q")
 
 				elif event.key==pygame.K_e and i != 24:
-					if i == 0 and current_level[1]:
-						visited.append(i)
-						current_level[i] = False
-						i = 1
-					elif i > 0 and i < 3 and current_level[i+2]:
-						visited.append(i)
-						current_level[i] = False
-						i += 2
-					elif i > 2 and i < 6 and current_level[i+3]:
-						visited.append(i)
-						current_level[i] = False
-						i += 3
-					elif i > 5 and i < 10 and current_level[i+4]:
-						visited.append(i)
-						current_level[i] = False
-						i += 4
-
-					elif i > 10 and i < 15 and current_level[i+4]:
-						visited.append(i)
-						current_level[i] = False
-						i += 4
-					elif i > 15 and i < 19 and current_level[i+3]:
-						visited.append(i)
-						current_level[i] = False
-						i += 3
-					elif i > 19 and i < 22 and current_level[i+2]:
-						visited.append(i)
-						current_level[i] = False
-						i += 2
-					elif i > 22 and i < 24 and current_level[i+1]:
-						visited.append(i)
-						current_level[i] = False
-						i += 1
+					i = connectionsStart.possible_move("E")
 
 				elif event.key==pygame.K_a and i != 0:
-					if i == 1 and current_level[0]:
-						visited.append(i)
-						current_level[i] = False
-						i = 0
-					elif i > 2 and i < 5 and current_level[i-2]:
-						visited.append(i)
-						current_level[i] = False
-						i -= 2
-					elif i > 5 and i < 9 and current_level[i-3]:
-						visited.append(i)
-						current_level[i] = False
-						i -= 3
-					elif i > 9 and i < 14 and current_level[i-4]:
-						visited.append(i)
-						current_level[i] = False
-						i -= 4
-
-					elif i > 14 and i < 19 and current_level[i-4]:
-						visited.append(i)
-						current_level[i] = False
-						i -= 4
-					elif i > 18 and i < 22 and current_level[i-3]:
-						visited.append(i)
-						current_level[i] = False
-						i -= 3
-					elif i > 21 and i < 24 and current_level[i-2]:
-						visited.append(i)
-						current_level[i] = False
-						i -= 2
-					elif i == 24 and current_level[i-1]:
-						visited.append(i)
-						current_level[i] = False
-						i -= 1
+					i = connectionsStart.possible_move("A")
 
 				elif event.key==pygame.K_d and i != 24:
-					if i == 0 and current_level[2]:
-						visited.append(i)
-						current_level[i] = False
-						i = 2
-					elif i > 0 and i < 3 and current_level[i+3]:
-						visited.append(i)
-						current_level[i] = False
-						i += 3
-					elif i > 2 and i < 6 and current_level[i+4]:
-						visited.append(i)
-						current_level[i] = False
-						i += 4
-					elif i > 5 and i < 10 and current_level[i+5]:
-						visited.append(i)
-						current_level[i] = False
-						i += 5
+					i = connectionsStart.possible_move("D")
 
-					elif i > 9 and i < 14 and current_level[i+5]:
-						visited.append(i)
-						current_level[i] = False
-						i += 5
-					elif i > 14 and i < 18 and current_level[i+4]:
-						visited.append(i)
-						current_level[i] = False
-						i += 4
-					elif i > 18 and i < 21 and current_level[i+3]:
-						visited.append(i)
-						current_level[i] = False
-						i += 3
-					elif i > 21 and i < 23 and current_level[i+2]:
-						visited.append(i)
-						current_level[i] = False
-						i += 2
+				elif event.key==pygame.K_s and i != 0 and i != 24:
+					i = connectionsStart.possible_move("S")
 
 				elif event.key==pygame.K_r:
 					game = False
@@ -451,7 +332,7 @@ def game(level_chosen):
 					pygame.quit()
 					quit()
 
-			elif event.type==pygame.KEYDOWN and i == 24 and len(visited) == 24:
+			elif event.type==pygame.KEYDOWN and i == 24 and connectionsStart.number_visited() == 24:
 				if event.key==pygame.K_ESCAPE:
 					pygame.quit()
 					quit()
@@ -477,12 +358,6 @@ def game(level_chosen):
 						scene = "main_menu"
 
 
-
-
-
-
-
-
 		screen.fill([255,255,255])
 		screen.blit(BackGround.image,BackGround.rect)
 
@@ -492,11 +367,12 @@ def game(level_chosen):
 				game_hex=Image.Resize("hexWhite.png",0.8)
 			else:
 				game_hex=Image.Resize("hex.png",0.8)
-			if current_level[j] == True:
+			if connectionsStart.is_active(j):
 				screen.blit(game_hex,hex_positions[j])
 
+
 		#Completion Screen
-		if i == 24 and len(visited) == 24 and level_chosen != 10:
+		if i == 24 and connectionsStart.number_visited() == 24 and level_chosen != 10:
 			current_level[i] = False
 			if opt == 0:
 				levelComplete = Image.Resize("levelCompleteOpt1.png", 1)
@@ -504,7 +380,7 @@ def game(level_chosen):
 				levelComplete = Image.Resize("levelCompleteOpt2.png", 1)
 			screen.blit(levelComplete, [screen_width/2 - levelComplete.get_width()/2, screen_height/2 - levelComplete.get_height()/2])
 
-		elif i == 24 and len(visited) == 24 and level_chosen == 10:
+		elif i == 24 and connectionsStart.number_visited() == 24 and level_chosen == 10:
 			current_level[i] = False
 			endScreen = Image.Resize("endScreen.png", 1)
 			screen.blit(endScreen, [screen_width/2 - endScreen.get_width()/2, screen_height/2 - endScreen.get_height()/2])
@@ -527,7 +403,7 @@ def controller():
 		elif scene == "game":
 			scene, level_chosen = game(level_chosen)
 
-#A function to ensure all assets necessary to run the game are in the folder with it.
+#A function to ensure all assets necessary to run the game are in the folder with it by downloading them off github.
 def getAssets():
 	for asset in assets:
 		try:
@@ -542,18 +418,7 @@ def getAssets():
 		with open("hexData.json", "wb") as f:
 			f.write(requests.get("https://raw.githubusercontent.com/Chrome599/Hexagone/master/hexData.json").content)
 
-#class Hexagon:
-#	def __init__(self, active, connected):
-#		self.active = active
-#		self.connected = connected
-#	def connection(self, direction):
-#		return self.connected[direction]
 
-#class LevelConnections:
-#	def __init__(self, hexagons):
-#		self.hexagons = {}
-#		for hexagon, i in enumerate(hexagons):
-#			self.hexagons[i] = hexagon
 
 getAssets()
 controller()
