@@ -61,7 +61,7 @@ def getAssets():
         with open((os.getcwd() + "\\assets\\hexData.json"), "wb") as f:
             f.write(
                 requests.get(
-                    "https://raw.githubusercontent.com/Chrome599/Hexagone/master/hexData.json"
+                    "https://raw.githubusercontent.com/Chrome599/Hexagone/master/assets/hexData.json"
                 ).content
             )
 
