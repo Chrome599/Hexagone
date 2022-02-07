@@ -41,6 +41,33 @@ assets = [
     "startHex.png",
 ]
 
+# A function to ensure all assets necessary to run the game are in the folder with it by downloading them off github.
+def getAssets():
+    for asset in assets:
+        try:
+            image = pygame.image.load("assets\\" + asset)
+        except:
+            with open((os.getcwd() + "\\assets\\" + asset), "wb") as f:
+                f.write(
+                    requests.get(
+                        "https://raw.githubusercontent.com/Chrome599/Hexagone/master/assets/"
+                        + asset
+                    ).content
+                )
+    try:
+        with open("hexData.json", "r") as read_file:
+            jsonCheck = json.load(read_file)
+    except:
+        with open((os.getcwd() + "\\assets\\hexData.json"), "wb") as f:
+            f.write(
+                requests.get(
+                    "https://raw.githubusercontent.com/Chrome599/Hexagone/master/hexData.json"
+                ).content
+            )
+
+
+getAssets()
+
 connections = {
     0: {"E": 1, "D": 2},
     1: {"E": 3, "A": 0, "S": 2, "D": 4},
@@ -133,7 +160,8 @@ class LevelConnections:
 
 
 # Hexagon Positions for game
-game_hex = Image.Resize("assets\hex.png", 0.8)
+
+game_hex = Image.Resize("assets\\hex.png", 0.8)
 hexX = screen_width / 6
 hexY = screen_height / 2
 hex_positions = [
@@ -166,7 +194,7 @@ hex_positions = [
 
 
 # Game BackGround
-BackGround = Image("bg.jpg", [0, 0])
+BackGround = Image("assets\\bg.jpg", [0, 0])
 
 # Text Renderer
 def text_format(message, textFont, textSize, textColour):
@@ -199,17 +227,17 @@ def main_menu():
         screen.blit(BackGround.image, BackGround.rect)
 
         # Main Menu title
-        HexTitle = Image("assets\Title.png", [150, 70])
+        HexTitle = Image("assets\\Title.png", [150, 70])
         screen.blit(HexTitle.image, HexTitle.rect)
 
         # Control diagrams
-        controlsLeft = Image.Resize("assets\controlsLeft.png", 0.7)
+        controlsLeft = Image.Resize("assets\\controlsLeft.png", 0.7)
         screen.blit(controlsLeft, [0, 300])
 
-        controlsRight = Image.Resize("assets\controlsRight.png", 0.8)
+        controlsRight = Image.Resize("assets\\controlsRight.png", 0.8)
         screen.blit(controlsRight, [screen_width - controlsRight.get_width(), 375])
 
-        startHex = Image.Resize("assets\startHex.png", 1)
+        startHex = Image.Resize("assets\\startHex.png", 1)
         screen.blit(startHex, [screen_width / 2 - startHex.get_width() / 2, 300])
 
         pygame.display.update()
@@ -256,7 +284,7 @@ def level_select():
 
         # Displaying hexagons and text on the screen to create a UI
         for j in range(0, 5):
-            levelHex = Image.Resize("assets\hex.png", 1)
+            levelHex = Image.Resize("assets\\hex.png", 1)
             screen.blit(
                 levelHex,
                 [
@@ -272,7 +300,7 @@ def level_select():
             screen.blit(level_current, [screen_width / 6 * (j + 1), 300])
 
         for k in range(5, 10):
-            levelHex = Image.Resize("assets\hex.png", 1)
+            levelHex = Image.Resize("assets\\hex.png", 1)
             screen.blit(
                 levelHex,
                 [
@@ -290,7 +318,7 @@ def level_select():
                 screen.blit(level_current, [screen_width / 6 * (k - 4) - 10, 450])
 
         # Level Select title
-        HexTitle = Image("assets\Title.png", [150, 40])
+        HexTitle = Image("assets\\Title.png", [150, 40])
         screen.blit(HexTitle.image, HexTitle.rect)
 
         pygame.display.update()
@@ -311,7 +339,7 @@ def game(level_chosen):
     level = Level(level_chosen)
 
     # Fetching the level data needed from the json file
-    current_level = level.levelLoader("hexData.json")
+    current_level = level.levelLoader("assets\\hexData.json")
 
     visited_start = 0
 
@@ -410,9 +438,9 @@ def game(level_chosen):
         # Displaying remaining hexagons and currently selected one as highlighted
         for j in range(0, 25):
             if j == i:
-                game_hex = Image.Resize("assets\hexWhite.png", 0.8)
+                game_hex = Image.Resize("assets\\hexWhite.png", 0.8)
             else:
-                game_hex = Image.Resize("assets\hex.png", 0.8)
+                game_hex = Image.Resize("assets\\hex.png", 0.8)
             if connectionsStart.is_active(j):
                 screen.blit(game_hex, hex_positions[j])
 
@@ -420,9 +448,9 @@ def game(level_chosen):
         if i == 24 and connectionsStart.number_visited() == 24 and level_chosen != 10:
             current_level[i] = False
             if opt == 0:
-                levelComplete = Image.Resize("assets\levelCompleteOpt1.png", 1)
+                levelComplete = Image.Resize("assets\\levelCompleteOpt1.png", 1)
             else:
-                levelComplete = Image.Resize("assets\levelCompleteOpt2.png", 1)
+                levelComplete = Image.Resize("assets\\levelCompleteOpt2.png", 1)
             screen.blit(
                 levelComplete,
                 [
@@ -433,7 +461,7 @@ def game(level_chosen):
 
         elif i == 24 and connectionsStart.number_visited() == 24 and level_chosen == 10:
             current_level[i] = False
-            endScreen = Image.Resize("assets\endScreen.png", 1)
+            endScreen = Image.Resize("assets\\endScreen.png", 1)
             screen.blit(
                 endScreen,
                 [
@@ -461,31 +489,5 @@ def controller():
             scene, level_chosen = game(level_chosen)
 
 
-# A function to ensure all assets necessary to run the game are in the folder with it by downloading them off github.
-def getAssets():
-    for asset in assets:
-        try:
-            image = pygame.image.load(asset)
-        except:
-            with open(asset, "wb") as f:
-                f.write(
-                    requests.get(
-                        "https://github.com/Chrome599/Hexagone/raw/master/assets"
-                        + asset
-                    ).content
-                )
-    try:
-        with open("hexData.json", "r") as read_file:
-            jsonCheck = json.load(read_file)
-    except:
-        with open("hexData.json", "wb") as f:
-            f.write(
-                requests.get(
-                    "https://raw.githubusercontent.com/Chrome599/Hexagone/master/hexData.json"
-                ).content
-            )
-
-
-getAssets()
 controller()
 pygame.quit()
