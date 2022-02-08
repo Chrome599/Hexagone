@@ -39,6 +39,7 @@ assets = [
     "controlsRight.png",
     "endScreen.png",
     "startHex.png",
+    "padlock.png",
 ]
 
 # A function to ensure all assets necessary to run the game are in the folder with it by downloading them off github.
@@ -159,6 +160,29 @@ class LevelConnections:
         return self.visited
 
 
+class playerData:
+    def __init__(self):
+        try:
+            with open("playerData.json", "r") as read_file:
+                self.unlocks = json.load(read_file)
+        except:
+            default = [i == 0 for i in range(10)]
+            with open("playerData.json", "w") as outfile:
+                json.dump(default, outfile)
+            self.unlocks = default
+
+    def getUnlocked(self, index):
+        return self.unlocks[index]
+
+    def dataUpdater(self, index):
+        self.unlocks[index] = True
+
+    def externalUpdater(self):
+        os.remove("playerData.json")
+        with open("playerData.json", "w") as outfile:
+            json.dump(self.unlocks, outfile)
+
+
 # Hexagon Positions for game
 
 game_hex = Image.Resize("assets\\hex.png", 0.8)
@@ -203,6 +227,8 @@ def text_format(message, textFont, textSize, textColour):
     return newText
 
 
+unlocked = playerData()
+
 # Main Menu
 def main_menu():
 
@@ -212,10 +238,12 @@ def main_menu():
     while menu:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                unlocked.externalUpdater()
                 pygame.quit()
                 quit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
+                    unlocked.externalUpdater()
                     pygame.quit()
                     quit()
                 elif event.key == pygame.K_RETURN:
@@ -255,24 +283,30 @@ def level_select():
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                unlocked.externalUpdater()
                 pygame.quit()
                 quit()
             # Event handler to allow the user to navigate level selection
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_w and i > 4:
-                    i -= 5
+                    if unlocked.getUnlocked(i - 5):
+                        i -= 5
                 elif event.key == pygame.K_s and i < 5:
-                    i += 5
+                    if unlocked.getUnlocked(i + 5):
+                        i += 5
                 elif event.key == pygame.K_a and i != 0:
-                    i -= 1
+                    if unlocked.getUnlocked(i - 1):
+                        i -= 1
                 elif event.key == pygame.K_d and i != 9:
-                    i += 1
+                    if unlocked.getUnlocked(i + 1):
+                        i += 1
                 elif event.key == pygame.K_RETURN:
                     level_chosen = i + 1
                     scene = "game"
                     # print(level_chosen)
                     select = False
                 elif event.key == pygame.K_ESCAPE:
+                    unlocked.externalUpdater()
                     pygame.quit()
                     quit()
 
@@ -296,8 +330,11 @@ def level_select():
                 level_current = text_format(levels[j], font, 55, white)
             else:
                 level_current = text_format(levels[j], font, 55, black)
-
-            screen.blit(level_current, [screen_width / 6 * (j + 1), 300])
+            if unlocked.getUnlocked(j):
+                screen.blit(level_current, [screen_width / 6 * (j + 1), 300])
+            else:
+                padlock = Image.Resize("assets\\padlock.png", 0.5)
+                screen.blit(padlock, [screen_width / 6 * (j + 1), 300])
 
         for k in range(5, 10):
             levelHex = Image.Resize("assets\\hex.png", 1)
@@ -312,10 +349,13 @@ def level_select():
                 level_current = text_format(levels[k], font, 55, white)
             else:
                 level_current = text_format(levels[k], font, 55, black)
-            if levels[k] != "10":
+            if levels[k] != "10" and unlocked.getUnlocked(k):
                 screen.blit(level_current, [screen_width / 6 * (k - 4), 450])
-            else:
+            elif unlocked.getUnlocked(k):
                 screen.blit(level_current, [screen_width / 6 * (k - 4) - 10, 450])
+            else:
+                padlock = Image.Resize("assets\\padlock.png", 0.5)
+                screen.blit(padlock, [screen_width / 6 * (k - 4), 450])
 
         # Level Select title
         HexTitle = Image("assets\\Title.png", [150, 40])
@@ -362,6 +402,7 @@ def game(level_chosen):
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                unlocked.externalUpdater()
                 pygame.quit()
                 quit()
 
@@ -393,6 +434,7 @@ def game(level_chosen):
                     scene = "game"
 
                 elif event.key == pygame.K_ESCAPE:
+                    unlocked.externalUpdater()
                     pygame.quit()
                     quit()
 
@@ -402,6 +444,7 @@ def game(level_chosen):
                 and connectionsStart.number_visited() == 24
             ):
                 if event.key == pygame.K_ESCAPE:
+                    unlocked.externalUpdater()
                     pygame.quit()
                     quit()
 
@@ -446,7 +489,7 @@ def game(level_chosen):
 
         # Completion Screen
         if i == 24 and connectionsStart.number_visited() == 24 and level_chosen != 10:
-            current_level[i] = False
+            unlocked.dataUpdater(level_chosen)
             if opt == 0:
                 levelComplete = Image.Resize("assets\\levelCompleteOpt1.png", 1)
             else:
@@ -460,7 +503,6 @@ def game(level_chosen):
             )
 
         elif i == 24 and connectionsStart.number_visited() == 24 and level_chosen == 10:
-            current_level[i] = False
             endScreen = Image.Resize("assets\\endScreen.png", 1)
             screen.blit(
                 endScreen,
