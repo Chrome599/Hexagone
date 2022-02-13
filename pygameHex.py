@@ -69,6 +69,7 @@ def getAssets():
 
 getAssets()
 
+# A dict containing indexs for specific hexagons, and the hexagon indexs connected to these in specific directions
 connections = {
     0: {"E": 1, "D": 2},
     1: {"E": 3, "A": 0, "S": 2, "D": 4},
@@ -133,6 +134,9 @@ class Hexagon:
     def make_inactive(self):
         self.active = False
 
+    def make_active(self):
+        self.active = True
+
 
 class LevelConnections:
     def __init__(self, hexagons, visited, starting_index=0):
@@ -140,11 +144,12 @@ class LevelConnections:
         self.visited = visited
         self.index = starting_index
 
-    def possible_move(self, direction):
+    def possible_move(self, direction, undoButton):
         try:
             if self.hexagons[connections[self.index][direction]].active:
                 next_index = connections[self.index][direction]
                 self.hexagons[self.index].make_inactive()
+                undoButton.newMove(self.index)
                 self.index = next_index
                 self.visited += 1
                 if self.visited == 24 and self.index == 24:
@@ -158,6 +163,11 @@ class LevelConnections:
 
     def number_visited(self):
         return self.visited
+
+    def undoMove(self, previousIndex):
+        self.visited -= 1
+        self.index = previousIndex
+        return self.hexagons[previousIndex].make_active()
 
 
 class playerData:
@@ -181,6 +191,30 @@ class playerData:
         os.remove("playerData.json")
         with open("playerData.json", "w") as outfile:
             json.dump(self.unlocks, outfile)
+
+
+# A stack class to implement an undo button feature
+class undoStack:
+    def __init__(self, maxsize):
+        self.maxsize = maxsize
+        self.previousMoves = []
+
+    # A function for adding the index of the last visited hexagon to the list of previous moves
+    def newMove(self, new):
+        self.previousMoves.append(new)
+
+    # A function for popping the top item in the stack, before performing the undo function and returning the popped value
+    def undo(self, connectionsStart):
+        previousIndex = self.previousMoves.pop()
+        connectionsStart.undoMove(previousIndex)
+        return previousIndex
+
+    # Checks if the stack is empty or not
+    def empty(self):
+        if len(self.previousMoves) == 0:
+            return True
+        else:
+            return False
 
 
 # Hexagon Positions for game
@@ -395,6 +429,8 @@ def game(level_chosen):
 
     connectionsStart = LevelConnections(hexagons, visited_start)
 
+    undoButton = undoStack(24)
+
     pygame.display.set_caption(caption)
 
     # Game Loop
@@ -412,22 +448,22 @@ def game(level_chosen):
                 connectionsStart.number_visited() != 24 or i != 24
             ):
                 if event.key == pygame.K_w and i != 0 and i != 24:
-                    i = connectionsStart.possible_move("W")
+                    i = connectionsStart.possible_move("W", undoButton)
 
                 elif event.key == pygame.K_q and i != 0:
-                    i = connectionsStart.possible_move("Q")
+                    i = connectionsStart.possible_move("Q", undoButton)
 
                 elif event.key == pygame.K_e and i != 24:
-                    i = connectionsStart.possible_move("E")
+                    i = connectionsStart.possible_move("E", undoButton)
 
                 elif event.key == pygame.K_a and i != 0:
-                    i = connectionsStart.possible_move("A")
+                    i = connectionsStart.possible_move("A", undoButton)
 
                 elif event.key == pygame.K_d and i != 24:
-                    i = connectionsStart.possible_move("D")
+                    i = connectionsStart.possible_move("D", undoButton)
 
                 elif event.key == pygame.K_s and i != 0 and i != 24:
-                    i = connectionsStart.possible_move("S")
+                    i = connectionsStart.possible_move("S", undoButton)
 
                 elif event.key == pygame.K_r:
                     game = False
@@ -437,6 +473,14 @@ def game(level_chosen):
                     unlocked.externalUpdater()
                     pygame.quit()
                     quit()
+
+                elif event.key == pygame.K_b:
+                    game = False
+                    scene = "level_select"
+
+                elif event.key == pygame.K_LEFT:
+                    if not undoButton.empty():
+                        i = undoButton.undo(connectionsStart)
 
             elif (
                 event.type == pygame.KEYDOWN
