@@ -294,10 +294,10 @@ def main_menu():
 
         # Control diagrams
         controlsLeft = Image.Resize("assets\\controlsLeft.png", 0.7)
-        screen.blit(controlsLeft, [0, 300])
+        screen.blit(controlsLeft, [40, 300])
 
         controlsRight = Image.Resize("assets\\controlsRight.png", 0.8)
-        screen.blit(controlsRight, [screen_width - controlsRight.get_width(), 375])
+        screen.blit(controlsRight, [screen_width - controlsRight.get_width() + 20, 320])
 
         startHex = Image.Resize("assets\\startHex.png", 1)
         screen.blit(startHex, [screen_width / 2 - startHex.get_width() / 2, 300])
