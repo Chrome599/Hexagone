@@ -121,8 +121,8 @@ class Level:
     def __init__(self, level_chosen):
         self.level_chosen = level_chosen
 
-    def levelLoader(self, fileName):
-        with open(fileName, "r") as read_file:
+    def levelLoader(self, previous_index):
+        with open(file_name, "r") as read_file:
             levelLoad = json.load(read_file)
         return levelLoad[self.level_chosen - 1]
 
@@ -164,13 +164,13 @@ class LevelConnections:
     def number_visited(self):
         return self.visited
 
-    def undoMove(self, previousIndex):
+    def undo_move(self, previous_index):
         self.visited -= 1
-        self.index = previousIndex
-        return self.hexagons[previousIndex].make_active()
+        self.index = previous_index
+        return self.hexagons[previous_index].make_active()
 
 
-class playerData:
+class PlayerData:
     def __init__(self):
         try:
             with open("playerData.json", "r") as read_file:
@@ -194,20 +194,21 @@ class playerData:
 
 
 # A stack class to implement an undo button feature
-class undoStack:
+class UndoStack:
     def __init__(self, maxsize):
         self.maxsize = maxsize
         self.previousMoves = []
 
     # A function for adding the index of the last visited hexagon to the list of previous moves
     def newMove(self, new):
-        self.previousMoves.append(new)
+        if len(self.previousMoves) <= self.maxsize:
+            self.previousMoves.append(new)
 
     # A function for popping the top item in the stack, before performing the undo function and returning the popped value
     def undo(self, connectionsStart):
-        previousIndex = self.previousMoves.pop()
-        connectionsStart.undoMove(previousIndex)
-        return previousIndex
+        previous_index = self.previousMoves.pop()
+        connectionsStart.undo_move(previous_index)
+        return previous_index
 
     # Checks if the stack is empty or not
     def empty(self):
@@ -261,7 +262,7 @@ def text_format(message, textFont, textSize, textColour):
     return newText
 
 
-unlocked = playerData()
+unlocked = PlayerData()
 
 # Main Menu
 def main_menu():
@@ -429,7 +430,7 @@ def game(level_chosen):
 
     connectionsStart = LevelConnections(hexagons, visited_start)
 
-    undoButton = undoStack(24)
+    undoButton = UndoStack(24)
 
     pygame.display.set_caption(caption)
 
