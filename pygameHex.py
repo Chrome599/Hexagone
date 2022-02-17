@@ -121,7 +121,7 @@ class Level:
     def __init__(self, level_chosen):
         self.level_chosen = level_chosen
 
-    def levelLoader(self, previous_index):
+    def levelLoader(self, file_name):
         with open(file_name, "r") as read_file:
             levelLoad = json.load(read_file)
         return levelLoad[self.level_chosen - 1]
