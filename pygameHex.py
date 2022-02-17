@@ -45,6 +45,7 @@ assets = [
 # A function to ensure all assets necessary to run the game are in the folder with it by downloading them off github.
 def getAssets():
     for asset in assets:
+        # Iterates through assets, and attempts to load them, if it fails it goes and loads them into an assets folder
         try:
             image = pygame.image.load("assets\\" + asset)
         except:
@@ -55,6 +56,7 @@ def getAssets():
                         + asset
                     ).content
                 )
+    # The same except for the json file
     try:
         with open("hexData.json", "r") as read_file:
             jsonCheck = json.load(read_file)
@@ -67,9 +69,11 @@ def getAssets():
             )
 
 
+# Immediately runs the function to allow the rest of the code to run properly
 getAssets()
 
 # A dict containing indexs for specific hexagons, and the hexagon indexs connected to these in specific directions
+# e.g. Hexagon 0, aka the starting hexagon is connected to hexagon 1 in the E direction, and 2 in the D direction
 connections = {
     0: {"E": 1, "D": 2},
     1: {"E": 3, "A": 0, "S": 2, "D": 4},
@@ -127,6 +131,7 @@ class Level:
         return levelLoad[self.level_chosen - 1]
 
 
+# A class for defining a list of hexagons as either inactive or active (bool), and functions to alter this
 class Hexagon:
     def __init__(self, active):
         self.active = active
@@ -138,40 +143,54 @@ class Hexagon:
         self.active = True
 
 
+# A class that controls movement within the game itself
 class LevelConnections:
+    # The init takes the list of hexagons previously defined by the Hexagon class, along with a list of the hexagons that are inactive at the start, before setting the current index to 0
     def __init__(self, hexagons, visited, starting_index=0):
         self.hexagons = hexagons
         self.visited = visited
         self.index = starting_index
 
+    # A function for checking if a move is legal and making it
     def possible_move(self, direction, undoButton):
         try:
+            # First it checks if the hexagon the user is attempting to move to is currently active or not, if it is it proceeds
             if self.hexagons[connections[self.index][direction]].active:
+                # This fetches the index of the hexagon attempting to be reached from the dict, using the current index and direction input to find it
                 next_index = connections[self.index][direction]
+                # It now makes the current hexagon inactive, causing it to disappear in game
                 self.hexagons[self.index].make_inactive()
+                # Next it appends the current index to the undo stack
                 undoButton.newMove(self.index)
+                # Lastly it changes the current index to the new one and increments number of visited hexagons by one
                 self.index = next_index
                 self.visited += 1
+                # This checks if the user has completed the level successfully, so the final hexagon can be removed to display next menu
                 if self.visited == 24 and self.index == 24:
                     self.hexagons[self.index].make_inactive()
         except:
             pass
         return self.index
 
+    # A function to check if a hexagon is active or not
     def is_active(self, index):
         return self.hexagons[index].active
 
+    # A function to return number of hexagons visited (out of 25 total)
     def number_visited(self):
         return self.visited
 
+    # An undo function, reducing the number visited, making the active index the previously visited one and making the previously visited hexagon active
     def undo_move(self, previous_index):
         self.visited -= 1
         self.index = previous_index
         return self.hexagons[previous_index].make_active()
 
 
+# A class for loading, creating, saving and updating player data which consists of a list of bools determining whether a level has been unlocked or not
 class PlayerData:
     def __init__(self):
+        # Attempts to open playerData json file, if this fales it instead creates one with the default level unlocks (1 unlocked, the rest locked)
         try:
             with open("playerData.json", "r") as read_file:
                 self.unlocks = json.load(read_file)
@@ -181,12 +200,16 @@ class PlayerData:
                 json.dump(default, outfile)
             self.unlocks = default
 
+    # Checks if a specified level has been unlocked
     def getUnlocked(self, index):
         return self.unlocks[index]
 
+    # Changes a specificed level to being unlocked
     def dataUpdater(self, index):
         self.unlocks[index] = True
 
+    # Updates the external playerData json file to reflect the current state of the unlocks list
+    # Notably this is called upon exit of the game exclusively
     def externalUpdater(self):
         os.remove("playerData.json")
         with open("playerData.json", "w") as outfile:
@@ -264,13 +287,15 @@ def text_format(message, textFont, textSize, textColour):
 
 unlocked = PlayerData()
 
-# Main Menu
+# Main Menu function
 def main_menu():
 
     menu = True
     pygame.display.set_caption("Hexagone - Main Menu")
 
+    # Main menu loop, containing building blocks for screen, and event handler
     while menu:
+        # Basic event handler which deals with the few actions the user can take from this opening screen
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 unlocked.externalUpdater()
@@ -285,7 +310,7 @@ def main_menu():
                     scene = "level_select"
                     menu = False
 
-                    # Main Menu UI
+        # Main Menu UI
         screen.fill([255, 255, 255])
         screen.blit(BackGround.image, BackGround.rect)
 
@@ -308,6 +333,7 @@ def main_menu():
     return scene
 
 
+# Level select function
 def level_select():
 
     select = True
@@ -338,13 +364,13 @@ def level_select():
                 elif event.key == pygame.K_RETURN:
                     level_chosen = i + 1
                     scene = "game"
-                    # print(level_chosen)
                     select = False
                 elif event.key == pygame.K_ESCAPE:
                     unlocked.externalUpdater()
                     pygame.quit()
                     quit()
 
+        # List of level numbers since pygame requires strings in for text generation
         levels = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
 
         # Level Select UI
@@ -352,8 +378,10 @@ def level_select():
         screen.blit(BackGround.image, BackGround.rect)
 
         # Displaying hexagons and text on the screen to create a UI
+        # The first iteration covers the top row of hexagons and text that overlays them, while the second handles the row beneath
         for j in range(0, 5):
             levelHex = Image.Resize("assets\\hex.png", 1)
+            # Blits the image in the location calculated by how far along in the row it is
             screen.blit(
                 levelHex,
                 [
@@ -361,16 +389,21 @@ def level_select():
                     315 - (levelHex.get_height() / 2),
                 ],
             )
+            # Checks if the text it's generating is for the currently hovered level, if so the text appears as white instead of black
             if j == i:
                 level_current = text_format(levels[j], font, 55, white)
             else:
                 level_current = text_format(levels[j], font, 55, black)
+
+            # Checks using the playerData class if the level hexagon being created is unlocked or not
+            # If it is it will display the text generated above, else it will display a padlock png
             if unlocked.getUnlocked(j):
                 screen.blit(level_current, [screen_width / 6 * (j + 1), 300])
             else:
                 padlock = Image.Resize("assets\\padlock.png", 0.5)
                 screen.blit(padlock, [screen_width / 6 * (j + 1), 300])
 
+        # Repeat of the above the for the second row of levels
         for k in range(5, 10):
             levelHex = Image.Resize("assets\\hex.png", 1)
             screen.blit(
@@ -384,6 +417,7 @@ def level_select():
                 level_current = text_format(levels[k], font, 55, white)
             else:
                 level_current = text_format(levels[k], font, 55, black)
+
             if levels[k] != "10" and unlocked.getUnlocked(k):
                 screen.blit(level_current, [screen_width / 6 * (k - 4), 450])
             elif unlocked.getUnlocked(k):
@@ -405,12 +439,13 @@ def level_select():
 def game(level_chosen):
 
     game = True
-    # print(level_chosen)
     caption = "Hexagone - Level " + str(level_chosen)
 
-    i = 0
-    opt = 0
+    # Defining the starting position of the game, and the starting position for the level completion screen
+    currentPos = 0
+    option = 0
 
+    # Calls the level data for specified level
     level = Level(level_chosen)
 
     # Fetching the level data needed from the json file
@@ -425,11 +460,14 @@ def game(level_chosen):
 
     hexagons = []
 
+    # Creates a list using the Hexagon class to define them as either active or inactive
     for hexagon in range(0, 25):
         hexagons.append(Hexagon(current_level[hexagon]))
 
+    # Initialization of the movement class for the level
     connectionsStart = LevelConnections(hexagons, visited_start)
 
+    # Initialization of the undostack
     undoButton = UndoStack(24)
 
     pygame.display.set_caption(caption)
@@ -444,27 +482,28 @@ def game(level_chosen):
                 quit()
 
             # Event handler in charge of dealing with inputs during the game. Due to movement in 6 directions great specification is needed
-            # An alternative to this is to hard code each hexagon using classes to know the hexagons they are connected to. Mouse controls are also an option
+            # The majority of this is handled by the LevelConnections class, this simply feeds it the key input by the user and the undoButton class
+            # Movement in the game is defined by Q, W, E, A, S and D, representing the direction they are in terms of a hexagon as explained on the main menu screen
             if event.type == pygame.KEYDOWN and (
-                connectionsStart.number_visited() != 24 or i != 24
+                connectionsStart.number_visited() != 24 or currentPos != 24
             ):
-                if event.key == pygame.K_w and i != 0 and i != 24:
-                    i = connectionsStart.possible_move("W", undoButton)
+                if event.key == pygame.K_w and currentPos != 0 and currentPos != 24:
+                    currentPos = connectionsStart.possible_move("W", undoButton)
 
-                elif event.key == pygame.K_q and i != 0:
-                    i = connectionsStart.possible_move("Q", undoButton)
+                elif event.key == pygame.K_q and currentPos != 0:
+                    currentPos = connectionsStart.possible_move("Q", undoButton)
 
-                elif event.key == pygame.K_e and i != 24:
-                    i = connectionsStart.possible_move("E", undoButton)
+                elif event.key == pygame.K_e and currentPos != 24:
+                    currentPos = connectionsStart.possible_move("E", undoButton)
 
-                elif event.key == pygame.K_a and i != 0:
-                    i = connectionsStart.possible_move("A", undoButton)
+                elif event.key == pygame.K_a and currentPos != 0:
+                    currentPos = connectionsStart.possible_move("A", undoButton)
 
-                elif event.key == pygame.K_d and i != 24:
-                    i = connectionsStart.possible_move("D", undoButton)
+                elif event.key == pygame.K_d and currentPos != 24:
+                    currentPos = connectionsStart.possible_move("D", undoButton)
 
-                elif event.key == pygame.K_s and i != 0 and i != 24:
-                    i = connectionsStart.possible_move("S", undoButton)
+                elif event.key == pygame.K_s and currentPos != 0 and currentPos != 24:
+                    currentPos = connectionsStart.possible_move("S", undoButton)
 
                 elif event.key == pygame.K_r:
                     game = False
@@ -475,17 +514,20 @@ def game(level_chosen):
                     pygame.quit()
                     quit()
 
+                # A back key to return to level selection screen
                 elif event.key == pygame.K_b:
                     game = False
                     scene = "level_select"
 
+                # Calls the undo stack to undo previously made move
                 elif event.key == pygame.K_LEFT:
                     if not undoButton.empty():
-                        i = undoButton.undo(connectionsStart)
+                        currentPos = undoButton.undo(connectionsStart)
 
+            # Checks if the game is won or not, and if so changes what key inputs will do
             elif (
                 event.type == pygame.KEYDOWN
-                and i == 24
+                and currentPos == 24
                 and connectionsStart.number_visited() == 24
             ):
                 if event.key == pygame.K_ESCAPE:
@@ -493,16 +535,18 @@ def game(level_chosen):
                     pygame.quit()
                     quit()
 
+                # Checks which option selected and performs the corresponding action
                 elif level_chosen != 10:
                     if event.key == pygame.K_RETURN:
-                        if opt == 0:
+                        if option == 0:
                             game = False
                             scene = "main_menu"
-                        elif opt == 1:
+                        elif option == 1:
                             game = False
                             scene = "game"
                             level_chosen += 1
 
+                    # Any movement key will switch between the two options for simplicity sake
                     elif (
                         event.key == pygame.K_w
                         or event.key == pygame.K_e
@@ -511,10 +555,10 @@ def game(level_chosen):
                         or event.key == pygame.K_s
                         or event.key == pygame.K_d
                     ):
-                        if opt == 0:
-                            opt = 1
-                        elif opt == 1:
-                            opt = 0
+                        if option == 0:
+                            option = 1
+                        elif option == 1:
+                            option = 0
                 else:
                     if event.key == pygame.K_RETURN:
                         game = False
@@ -525,7 +569,7 @@ def game(level_chosen):
 
         # Displaying remaining hexagons and currently selected one as highlighted
         for j in range(0, 25):
-            if j == i:
+            if j == currentPos:
                 game_hex = Image.Resize("assets\\hexWhite.png", 0.8)
             else:
                 game_hex = Image.Resize("assets\\hex.png", 0.8)
@@ -533,9 +577,13 @@ def game(level_chosen):
                 screen.blit(game_hex, hex_positions[j])
 
         # Completion Screen
-        if i == 24 and connectionsStart.number_visited() == 24 and level_chosen != 10:
+        if (
+            currentPos == 24
+            and connectionsStart.number_visited() == 24
+            and level_chosen != 10
+        ):
             unlocked.dataUpdater(level_chosen)
-            if opt == 0:
+            if option == 0:
                 levelComplete = Image.Resize("assets\\levelCompleteOpt1.png", 1)
             else:
                 levelComplete = Image.Resize("assets\\levelCompleteOpt2.png", 1)
@@ -547,7 +595,12 @@ def game(level_chosen):
                 ],
             )
 
-        elif i == 24 and connectionsStart.number_visited() == 24 and level_chosen == 10:
+        # Checks if this is the last level in the game they just completed and displays a slightly different screen if it is
+        elif (
+            currentPos == 24
+            and connectionsStart.number_visited() == 24
+            and level_chosen == 10
+        ):
             endScreen = Image.Resize("assets\\endScreen.png", 1)
             screen.blit(
                 endScreen,
