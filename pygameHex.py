@@ -44,6 +44,10 @@ assets = [
 
 # A function to ensure all assets necessary to run the game are in the folder with it by downloading them off github.
 def getAssets():
+    path = os.getcwd() + "\\assets\\"
+    if not os.path.exists(path):
+        os.makedirs(path)
+
     for asset in assets:
         # Iterates through assets, and attempts to load them, if it fails it goes and loads them into an assets folder
         try:
