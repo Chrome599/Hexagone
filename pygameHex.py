@@ -215,9 +215,18 @@ class PlayerData:
     # Updates the external playerData json file to reflect the current state of the unlocks list
     # Notably this is called upon exit of the game exclusively
     def externalUpdater(self):
-        os.remove("playerData.json")
+        if self.checkFileExists():
+            os.remove("playerData.json")
         with open("playerData.json", "w") as outfile:
             json.dump(self.unlocks, outfile)
+
+    def checkFileExists(self):
+        try:
+            with open("playerData.json", "r") as read_file:
+                checkFile = json.load(read_file)
+            return True
+        except:
+            return False
 
 
 # A stack class to implement an undo button feature
